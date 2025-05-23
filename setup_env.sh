@@ -18,3 +18,18 @@ git clone https://github.com/open-mmlab/mmdetection.git
 cd mmdetection
 pip install -v -e.‘
 cd..
+
+# 训练mask-rcnn
+    python train-mask-rcnn-voc.py
+
+# 测试mask-rcnn
+    python visualize_voc_results.py --mode test \
+        --cfg ./work_dirs/mask_rcnn_r50_fpn_voc_ins/merged_cfg.py \
+        --ckpt ./work_dirs/mask_rcnn_r50_fpn_voc_ins/best_coco_bbox_mAP_epoch_35.pth\
+        --score_thr 0.3
+
+    python visualize_voc_results.py --mode external \
+        --cfg ./work_dirs/mask_rcnn_r50_fpn_voc_ins/merged_cfg.py \
+        --ckpt ./work_dirs/mask_rcnn_r50_fpn_voc_ins/best_coco_bbox_mAP_epoch_35.pth \
+        --score_thr 0.3
+
