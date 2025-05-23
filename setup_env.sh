@@ -19,17 +19,8 @@ cd mmdetection
 pip install -v -e.‘
 cd..
 
-# 训练mask-rcnn
-    python train-mask-rcnn-voc.py
+# 训练sparse-rcnn
+    python ./mmdetection/tools/train.py ./sparse-rcnn_r50_fpn_1x_voc.py --work-dir ./work_dirs/sparse-rcnn_r50_fpn_1x_voc
 
-# 测试mask-rcnn
-    python visualize_voc_results.py --mode test \
-        --cfg ./work_dirs/mask_rcnn_r50_fpn_voc_ins/merged_cfg.py \
-        --ckpt ./work_dirs/mask_rcnn_r50_fpn_voc_ins/best_coco_bbox_mAP_epoch_35.pth\
-        --score_thr 0.3
-
-    python visualize_voc_results.py --mode external \
-        --cfg ./work_dirs/mask_rcnn_r50_fpn_voc_ins/merged_cfg.py \
-        --ckpt ./work_dirs/mask_rcnn_r50_fpn_voc_ins/best_coco_bbox_mAP_epoch_35.pth \
-        --score_thr 0.3
-
+# 测试sparse-rcnn
+    python eval_vis_sparse_rcnn.py
