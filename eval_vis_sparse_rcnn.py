@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Evaluate & Visualize Sparse-R-CNN on PASCAL VOC.
-Author: 济川 2025-05-17
-"""
-
-# ★★ 一句话解决所有 “XXX 未注册” 问题 ★★
 from mmdet.utils import register_all_modules
 register_all_modules(init_default_scope=True)
 
@@ -18,10 +10,9 @@ from mmengine.config import Config
 from mmengine.runner import Runner
 from mmengine.runner.checkpoint import load_checkpoint
 from mmdet.registry import MODELS
-from mmdet.apis import inference_detector                     # 新
+from mmdet.apis import inference_detector                     
 from mmdet.registry import VISUALIZERS 
 
-# ========= 用户可修改的参数 ============= #
 CFG_PATH = (
     "/mnt/data/jichuan/openmmlab_voc_project/"
     "sparse-rcnn_r50_fpn_1x_voc.py"
@@ -52,8 +43,6 @@ EXTRA_IMAGES = [
 ]
 
 SCORE_THR = 0.26
-# ======================================= #
-
 
 VOC_CLASSES = (
     'aeroplane', 'bicycle', 'bird', 'boat', 'bottle',
