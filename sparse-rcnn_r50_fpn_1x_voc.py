@@ -1,6 +1,6 @@
 # 继承基础配置
 _base_ = [
-    r'voc07.py',
+    r'voc0712.py',
     r'schedule_sparse_1x.py',
     r'default_runtime.py'
 ]
