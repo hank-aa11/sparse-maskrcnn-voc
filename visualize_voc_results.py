@@ -1,5 +1,5 @@
 """
-Mask R-CNN 可视化脚本
+Mask R-CNN 可视化
 
 功能：
 1) 测试模式（test）：
@@ -47,42 +47,31 @@ def setup_model(cfg_path, ckpt_path, device='cuda:0'):
     cfg = Config.fromfile(cfg_path)
     print(f"--- MMDetection Version: 3.3.0 ---")
 
-    # 1. 确保配置文件 model.test_cfg.rpn 存在 (这是 TwoStageDetector 初始化所必需的)
     if not cfg.model.get('test_cfg', {}).get('rpn'):
         print(f"--- 致命错误: cfg.model.test_cfg.rpn 在配置文件中缺失或为空! 请修正 merged_cfg.py。")
-        # 这里可以引发一个更明确的错误，或者尝试用默认值填充，但最好是配置文件本身正确。
-        # For now, let's assume the config file WILL be corrected.
-        # If not, the init_detector will fail as seen.
     else:
-        # 确保 model.test_cfg.rpn 中有 output_proposals (以防万一)
         cfg.model.test_cfg.rpn['output_proposals'] = True
-        if 'save_best_proposals' in cfg.model.test_cfg.rpn: # 清理旧参数
+        if 'save_best_proposals' in cfg.model.test_cfg.rpn: 
             del cfg.model.test_cfg.rpn['save_best_proposals']
         print(f"--- 调试 (MMDet 3.x): 确保 cfg.model.test_cfg.rpn 存在并设置了 output_proposals: {cfg.model.test_cfg.rpn}")
 
-
-    # 2. 配置 rpn_head.test_cfg (RPNHead 实际 predict 时会使用这个)
     if hasattr(cfg.model, 'rpn_head'):
         if not hasattr(cfg.model.rpn_head, 'test_cfg'):
             cfg.model.rpn_head.test_cfg = ConfigDict()
             print(f"--- 调试 (MMDet 3.x): 已为 cfg.model.rpn_head 创建空的 'test_cfg'")
 
-        # 将 model.test_cfg.rpn 的内容作为 rpn_head.test_cfg 的基础（如果 rpn_head.test_cfg 为空或部分参数缺失）
-        # 这样可以确保 rpn_head.test_cfg 包含所有必要的 RPN 测试参数
         if cfg.model.get('test_cfg', {}).get('rpn'):
             for key, value in cfg.model.test_cfg.rpn.items():
                 if key not in cfg.model.rpn_head.test_cfg:
                     cfg.model.rpn_head.test_cfg[key] = value
 
-        cfg.model.rpn_head.test_cfg['output_proposals'] = True # 确保设置
-        if 'save_best_proposals' in cfg.model.rpn_head.test_cfg: # 清理旧参数
+        cfg.model.rpn_head.test_cfg['output_proposals'] = True 
+        if 'save_best_proposals' in cfg.model.rpn_head.test_cfg: 
             del cfg.model.rpn_head.test_cfg['save_best_proposals']
         print(f"--- 调试 (MMDet 3.x): 最终的 cfg.model.rpn_head.test_cfg: {cfg.model.rpn_head.test_cfg}")
     else:
         print("--- 警告 (MMDet 3.x): cfg.model.rpn_head 未找到。")
 
-
-    # 3. （可选，但推荐）确保 model.roi_head.test_cfg 与 model.test_cfg.rcnn 一致
     if hasattr(cfg.model, 'roi_head') and cfg.model.get('test_cfg', {}).get('rcnn'):
         if not hasattr(cfg.model.roi_head, 'test_cfg'):
             cfg.model.roi_head.test_cfg = ConfigDict()
@@ -106,20 +95,18 @@ def setup_model(cfg_path, ckpt_path, device='cuda:0'):
 
 def visualize(mode, model, cfg, images, out_root, score_thr):
     mkdir_or_exist(out_root)
-    # --- 修改：强制可视化器参数，确保可见性 ---
     visualizer_cfg = dict(
         type='DetLocalVisualizer',
         name='vis',
         save_dir=out_root,
-        line_width=2,           # 线条宽度
-        bbox_color=(0, 255, 0), # 强制 proposals 使用亮绿色 (如果通过 pred_bbox_color 指定)
-        text_color=(200, 200, 200) # 默认文本颜色
+        line_width=2,          
+        bbox_color=(0, 255, 0), 
+        text_color=(200, 200, 200) 
     )
     visualizer = VISUALIZERS.build(visualizer_cfg)
 
-    if hasattr(visualizer, 'draw_proposals'): # 这个属性可能不存在于 MMDetection 3.x 的 visualizer
+    if hasattr(visualizer, 'draw_proposals'): 
         print(f"--- 调试: visualizer.draw_proposals 属性存在，值为: {visualizer.draw_proposals}")
-        # visualizer.draw_proposals = True # DetLocalVisualizer 默认会尝试画 .proposals，如果其他都不画
     else:
         print(f"--- 调试: visualizer 没有 draw_proposals 属性 (MMDet 3.x 正常行为)")
 
@@ -141,12 +128,12 @@ def visualize(mode, model, cfg, images, out_root, score_thr):
         dict(type='PackDetInputs', meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape', 'scale_factor', 'pad_shape', 'batch_input_shape')) # 确保 pad_shape, batch_input_shape 也在这里
     ]
     composed_pipeline = Compose(simple_test_pipeline_cfg)
-    out_root_abs = os.path.abspath(os.path.join(out_root, visualizer_cfg['name'])) # 修正路径问题
-    mkdir_or_exist(out_root_abs) # 确保 vis 目录存在
+    out_root_abs = os.path.abspath(os.path.join(out_root, visualizer_cfg['name'])) 
+    mkdir_or_exist(out_root_abs)
 
 
     for img_path in images:
-        print(f"\n--- VISUALIZE LOOP: Current img_path = {img_path} ---") # 图像顺序调试
+        print(f"\n--- VISUALIZE LOOP: Current img_path = {img_path} ---")
         raw_img_bgr = cv2.imread(img_path)
         if raw_img_bgr is None:
             print(f"错误: 无法读取图片 {img_path}。跳过此图片。")
@@ -155,7 +142,6 @@ def visualize(mode, model, cfg, images, out_root, score_thr):
         img_for_visualizer_rgb = cv2.cvtColor(raw_img_bgr, cv2.COLOR_BGR2RGB)
         current_img_prefix = os.path.splitext(os.path.basename(img_path))[0]
 
-        # ===================== 保存原始加载的图像 =====================
         debug_raw_save_dir = os.path.join(out_root, visualizer_cfg['name'])
         raw_save_path = os.path.join(out_root, visualizer_cfg['name'], f"{current_img_prefix}_original_loaded.png")
         
@@ -171,9 +157,8 @@ def visualize(mode, model, cfg, images, out_root, score_thr):
             print(f"  调试: 手动保存原始加载的图像时出错: {e_raw_save}")
             import traceback
             traceback.print_exc()
-        # =====================================================================
 
-        pipeline_input_data = dict(img_path=img_path, ori_shape=raw_img_bgr.shape[:2]) # 确保 ori_shape 传入
+        pipeline_input_data = dict(img_path=img_path, ori_shape=raw_img_bgr.shape[:2]) 
         processed_data = composed_pipeline(pipeline_input_data)
         batched_data_for_model = {'inputs': [processed_data['inputs']], 'data_samples': [processed_data['data_samples']]}
         
@@ -211,12 +196,9 @@ def visualize(mode, model, cfg, images, out_root, score_thr):
             if hasattr(ds, 'proposals') and ds.proposals is not None and \
             hasattr(ds.proposals, 'bboxes') and len(ds.proposals.bboxes) > 0:
                 
-                proposals_at_input_scale = ds.proposals.clone() # InstanceData, bboxes 在模型输入坐标系
+                proposals_at_input_scale = ds.proposals.clone()
 
-                # --- （可选）筛选 Top-K Proposals ---
                 num_proposals_to_draw = 20
-                # ... (之前的Top-K筛选逻辑，确保它作用在 proposals_at_input_scale 上并赋回) ...
-                # 例如:
                 if hasattr(proposals_at_input_scale, 'scores') and \
                    proposals_at_input_scale.scores is not None and \
                    isinstance(proposals_at_input_scale.scores, torch.Tensor) and \
@@ -237,24 +219,20 @@ def visualize(mode, model, cfg, images, out_root, score_thr):
                         temp_inst_data.labels = torch.zeros(len(top_k_inds), dtype=torch.long, device=temp_inst_data.bboxes.device)
                     proposals_at_input_scale = temp_inst_data
                     print(f"--- 调试: 将可视化分数最高的 {len(proposals_at_input_scale.bboxes)} 个 proposals。")
-                else: # 如果分数信息不全，就取前N个
+                else: 
                     num_to_take = min(num_proposals_to_draw, len(proposals_at_input_scale.bboxes))
                     proposals_at_input_scale = proposals_at_input_scale[:num_to_take]
                     print(f"--- 调试: proposals 分数信息不足，可视化前 {num_to_take} 个 proposals。")
-                # --- （可选）筛选结束 ---
-
-
-                # ----- A: 手动进行坐标缩放并直接用 OpenCV 绘制 -----
+            
                 print(f"\n--- OpenCV 手动绘制调试 ---")
-                img_for_opencv_draw = raw_img_bgr.copy() # 使用 BGR 格式的原始图像
+                img_for_opencv_draw = raw_img_bgr.copy() 
                 
-                ds_ori_shape = ds.get('ori_shape')       # (H_ori, W_ori)
-                ds_scale_factor = ds.get('scale_factor') # (scale_w, scale_h)
+                ds_ori_shape = ds.get('ori_shape')       
+                ds_scale_factor = ds.get('scale_factor') 
 
                 if ds_ori_shape and ds_scale_factor and hasattr(proposals_at_input_scale, 'bboxes') and len(proposals_at_input_scale.bboxes) > 0:
                     bboxes_np_scaled = proposals_at_input_scale.bboxes.clone().cpu().numpy()
                     
-                    # 反缩放: x_orig = x_scaled / scale_w, y_orig = y_scaled / scale_h
                     rescaled_bboxes_np = bboxes_np_scaled.copy()
                     rescaled_bboxes_np[:, 0::2] /= ds_scale_factor[0] # x1, x2
                     rescaled_bboxes_np[:, 1::2] /= ds_scale_factor[1] # y1, y2
@@ -267,14 +245,13 @@ def visualize(mode, model, cfg, images, out_root, score_thr):
                         x1, y1, x2, y2 = rescaled_bboxes_np[i]
                         x1_c, y1_c, x2_c, y2_c = int(round(x1)), int(round(y1)), int(round(x2)), int(round(y2))
                         
-                        # 确保坐标在图像边界内 (非常重要，cv2.rectangle 对超出边界的框可能行为不一或报错)
                         x1_c = max(0, x1_c)
                         y1_c = max(0, y1_c)
                         x2_c = min(img_for_opencv_draw.shape[1] - 1, x2_c) # img_for_opencv_draw.shape[1] is width
                         y2_c = min(img_for_opencv_draw.shape[0] - 1, y2_c) # img_for_opencv_draw.shape[0] is height
 
-                        if x1_c < x2_c and y1_c < y2_c: # 确保是有效的框
-                            cv2.rectangle(img_for_opencv_draw, (x1_c, y1_c), (x2_c, y2_c), (0, 255, 0), 2) # 绿色，线宽2
+                        if x1_c < x2_c and y1_c < y2_c:
+                            cv2.rectangle(img_for_opencv_draw, (x1_c, y1_c), (x2_c, y2_c), (0, 255, 0), 2) 
                             num_drawn_opencv +=1
                     
                     print(f"    OpenCV: 尝试绘制 {len(rescaled_bboxes_np)} 个框, 实际有效并绘制 {num_drawn_opencv} 个框。")
@@ -286,34 +263,26 @@ def visualize(mode, model, cfg, images, out_root, score_thr):
                         print(f"    错误: OpenCV 图像保存失败到: {opencv_save_path}")
                 else:
                     print("--- OpenCV: 缺少元信息或无 proposals 可绘制，跳过 OpenCV 手动绘制。")
-                # ----- 手动 OpenCV 绘制结束 -----
 
-
-                # ----- B: MMDetection Visualizer 尝试 (使用我们手动缩放后的坐标) -----
                 print(f"\n--- MMDetection Visualizer 使用手动缩放坐标调试 ---")
                 if ds_ori_shape and ds_scale_factor and hasattr(proposals_at_input_scale, 'bboxes') and len(proposals_at_input_scale.bboxes) > 0:
-                    # proposals_at_input_scale 已经是筛选过（如TopK）的，并且其bboxes是模型输入坐标系的
-                    # 我们需要用上面计算的 rescaled_bboxes_np (已经是原始图像坐标系)
-                    
-                    # 创建新的 InstanceData 存放手动缩放后的 bboxes
                     manually_rescaled_proposals = InstanceData()
                     manually_rescaled_proposals.bboxes = torch.from_numpy(rescaled_bboxes_np).to(proposals_at_input_scale.bboxes.device)
                     if hasattr(proposals_at_input_scale, 'scores'):
                         manually_rescaled_proposals.scores = proposals_at_input_scale.scores.clone()
                     if hasattr(proposals_at_input_scale, 'labels'):
                         manually_rescaled_proposals.labels = proposals_at_input_scale.labels.clone()
-                    else: # 如果最初的 proposals 没有 labels，我们在这里加上（尽管对于 proposals 通常是全0）
+                    else: 
                         manually_rescaled_proposals.labels = torch.zeros(len(manually_rescaled_proposals.bboxes), dtype=torch.long, device=manually_rescaled_proposals.bboxes.device)
 
 
                     pd_for_mmdet_vis = DetDataSample()
-                    pd_for_mmdet_vis.pred_instances = manually_rescaled_proposals # <--- 使用手动缩放后的 proposals
-
+                    pd_for_mmdet_vis.pred_instances = manually_rescaled_proposals
                     meta_for_mmdet_vis = {}
                     meta_for_mmdet_vis['ori_shape'] = ds_ori_shape
-                    meta_for_mmdet_vis['img_shape'] = ds_ori_shape # 关键: 告诉可视化器坐标是基于这个尺寸的
-                    meta_for_mmdet_vis['scale_factor'] = (1.0, 1.0) # 关键: 告诉可视化器无需再缩放
-                    meta_for_mmdet_vis['pad_shape'] = ds_ori_shape # 关键: 告诉可视化器无填充
+                    meta_for_mmdet_vis['img_shape'] = ds_ori_shape 
+                    meta_for_mmdet_vis['scale_factor'] = (1.0, 1.0) 
+                    meta_for_mmdet_vis['pad_shape'] = ds_ori_shape 
                     if ds.get('img_path'): meta_for_mmdet_vis['img_path'] = ds.get('img_path')
                     pd_for_mmdet_vis.set_metainfo(meta_for_mmdet_vis)
                     
@@ -344,22 +313,16 @@ def visualize(mode, model, cfg, images, out_root, score_thr):
                     except Exception as e_get_img_mmdet: print(f"    错误: MMDetection Visualizer (手动缩放坐标) 保存时发生异常: {e_get_img_mmdet}")
                 else:
                     print("--- MMDetection Visualizer: 缺少元信息或无 proposals 可进行手动缩放绘制，跳过。")
-                # ----- MMDetection Visualizer 尝试结束 -----
 
-            else: # if hasattr(ds, 'proposals')...
+            else: 
                 print(f"  跳过 {current_img_prefix} 的提议框可视化：无有效提议框数据。")
 
         # 2) Final bbox 和 3) Instance mask 可视化
         if hasattr(ds, 'pred_instances') and ds.pred_instances is not None and \
            hasattr(ds.pred_instances, 'bboxes') and len(ds.pred_instances.bboxes) > 0:
-            
-            # --- A. 可视化最终预测的 Bounding Boxes (仅方框) ---
+               
             print(f"  为 {current_img_prefix}_bbox 添加最终边界框可视化 (score_thr={score_thr})...")
-            
-            # 创建一个专门用于 bbox 可视化的 DetDataSample
             ds_for_bbox_visualization = DetDataSample()
-            
-            # 从原始的 ds.pred_instances 中复制必要信息，但不包括 masks
             pred_instances_bbox_only = InstanceData()
             if hasattr(ds.pred_instances, 'bboxes'):
                 pred_instances_bbox_only.bboxes = ds.pred_instances.bboxes
@@ -367,14 +330,11 @@ def visualize(mode, model, cfg, images, out_root, score_thr):
                 pred_instances_bbox_only.scores = ds.pred_instances.scores
             if hasattr(ds.pred_instances, 'labels'):
                 pred_instances_bbox_only.labels = ds.pred_instances.labels
-            # 特别注意：我们这里没有复制 ds.pred_instances.masks
-            
             ds_for_bbox_visualization.pred_instances = pred_instances_bbox_only
             
-            # 复制元信息从原始 ds 到我们新建的 ds_for_bbox_visualization
             if hasattr(ds, 'meta') and isinstance(ds.meta, dict):
                 ds_for_bbox_visualization.set_metainfo(ds.meta)
-            else: # 回退到手动复制关键元信息
+            else:
                 print(f"    警告: ds.meta 不是预期的字典或不存在。尝试手动为 ds_for_bbox_visualization 复制关键元信息...")
                 metainfo_to_copy = {}
                 keys_to_copy = ['img_path', 'ori_shape', 'img_shape', 'scale_factor', 'pad_shape', 'batch_input_shape']
@@ -397,7 +357,6 @@ def visualize(mode, model, cfg, images, out_root, score_thr):
                 else:
                     print(f"      严重警告: 未能从 ds 为 ds_for_bbox_visualization 复制任何元信息。")
 
-            # 即使我们不期望绘制掩码，为了保险，还是可以尝试设置 show_mask = False
             original_show_mask_setting_bbox = True 
             if hasattr(visualizer, 'show_mask'): original_show_mask_setting_bbox = visualizer.show_mask
             visualizer.show_mask = False
@@ -406,20 +365,13 @@ def visualize(mode, model, cfg, images, out_root, score_thr):
             visualizer.add_datasample(
                 name=f'{current_img_prefix}_bbox', 
                 image=img_for_visualizer_rgb,
-                data_sample=ds_for_bbox_visualization, # <--- 使用不含 masks 的 DetDataSample
+                data_sample=ds_for_bbox_visualization,
                 draw_gt=False, 
                 draw_pred=True,
                 pred_score_thr=score_thr, 
                 show=False
             )
-            
-            # 手动保存 bbox 图像
-            # 确保 out_root_abs 已经定义，例如在 for 循环外部:
-            # out_root_abs = os.path.abspath(os.path.join(out_root, visualizer_cfg['name']))
-            # mkdir_or_exist(out_root_abs)
-            expected_bbox_img_file = os.path.join(out_root_abs, f"{current_img_prefix}_bbox.png") # 使用 out_root_abs
-            
-            # --- 手动保存 bbox 图像的逻辑 ---
+  
             if not os.path.exists(expected_bbox_img_file): # 或者您有一个 FORCE_MANUAL_SAVE 标志
                 print(f"    调试: BBOX 图像文件 '{expected_bbox_img_file}' 未通过 add_datasample 自动创建。")
                 print(f"    尝试从 visualizer 手动获取并保存图像 {current_img_prefix}_bbox ...")
@@ -441,9 +393,7 @@ def visualize(mode, model, cfg, images, out_root, score_thr):
                     traceback.print_exc()
             elif os.path.exists(expected_bbox_img_file):
                 print(f"    调试: BBOX 图像文件已通过 add_datasample 自动创建或之前已手动保存: {expected_bbox_img_file}")
-            # --- 手动保存 bbox 图像结束 ---
 
-            # 恢复 show_mask 设置
             if hasattr(visualizer, 'show_mask'):
                 visualizer.show_mask = original_show_mask_setting_bbox
             print(f"    调试: 恢复 visualizer.show_mask = {visualizer.show_mask}")
@@ -502,7 +452,6 @@ def main():
     parser.add_argument('--score_thr', type=float, default=0.3, help="显示预测结果的置信度阈值")
     args = parser.parse_args()
 
-    # 先定义 images 列表和 out_root
     if args.mode == 'test':
         images = [
             '/mnt/data/jichuan/openmmlab_voc_project/data/voc_ins/val07/002954.jpg',
@@ -522,11 +471,8 @@ def main():
     if not images:
         print("错误：没有找到要处理的图片。请检查 'images' 列表。")
         return
-
-    # 初始化模型和配置 (这会打印出我们关心的运行时检查信息)
     model, cfg = setup_model(args.cfg, args.ckpt)
-
-    # --- DetInferencer 测试代码块 ---
+    
     print("\n--- 开始 DetInferencer 测试 ---")
     from mmdet.apis import DetInferencer
     try:
@@ -536,8 +482,6 @@ def main():
         if images:
             test_image_for_inferencer = images[0]
             print(f"DetInferencer 正在处理图片: {test_image_for_inferencer}")
-            
-            # 使用正确的参数 return_datasamples=True (复数)
             result_inferencer = inferencer(test_image_for_inferencer, return_datasamples=True)
             
             if result_inferencer and 'predictions' in result_inferencer and result_inferencer['predictions']:
@@ -576,9 +520,7 @@ def main():
         import traceback
         traceback.print_exc()
     print("--- DetInferencer 测试结束 ---\n")
-    # --- DetInferencer 测试代码块结束 ---
-
-    # 继续执行原来的可视化流程
+    
     visualize(args.mode, model, cfg, images, out_root, args.score_thr)
 
 if __name__ == '__main__':
