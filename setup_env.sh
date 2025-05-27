@@ -19,6 +19,8 @@ cd mmdetection
 pip install -v -e.‘
 cd..
 
+# ！！！首先需要将./mmdetection/mmdet/models/detectors/two_stage.py中的文件替换成提供的代码，最终可视化的时候才能得到Mask R-CNN第一阶段产生的proposal box和最终的预测结果
+
 # 训练mask-rcnn
     python train-mask-rcnn-voc.py
 
