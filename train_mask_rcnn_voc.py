@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import os
 from mmengine.config import Config
 from mmengine.runner import Runner
