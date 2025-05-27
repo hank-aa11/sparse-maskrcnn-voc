@@ -53,7 +53,6 @@ VOC_CLASSES = (
 
 
 def _patched_ckpt_path(ckpt_path: str) -> str:
-    """把 checkpoint 的 list-style dataset_meta → dict，返回补丁文件路径"""
     ckpt = torch.load(ckpt_path, map_location='cpu')
     meta = ckpt.setdefault('meta', {})
     ds_meta = meta.get('dataset_meta')
@@ -62,7 +61,7 @@ def _patched_ckpt_path(ckpt_path: str) -> str:
         meta['dataset_meta'] = {'classes': tuple(ds_meta)}
     elif ds_meta is None:
         meta['dataset_meta'] = {'classes': VOC_CLASSES}
-    else:  # 已经是 dict
+    else: 
         return ckpt_path
 
     patched = Path(tempfile.gettempdir()) / (Path(ckpt_path).stem + "_patched.pth")
@@ -72,7 +71,6 @@ def _patched_ckpt_path(ckpt_path: str) -> str:
 
 
 def build_model(cfg_path: str, ckpt_path: str, device: str = "cuda:0"):
-    """构建 Sparse-R-CNN 模型并载入权重（已修复 dataset_meta）"""
     cfg = Config.fromfile(cfg_path)
     model = MODELS.build(cfg.model)
     model.to(device)
@@ -83,14 +81,12 @@ def build_model(cfg_path: str, ckpt_path: str, device: str = "cuda:0"):
     if not hasattr(model, 'dataset_meta') or model.dataset_meta is None:
         model.dataset_meta = {'classes': VOC_CLASSES}
         
-    # 供 inference_detector / show_result 使用
     model.cfg = cfg
     model.eval()
     return model, cfg
 
 
 def evaluate(cfg_path: str, ckpt_path: str, out_dir: Path):
-    """Runner.test() 评测 VOC 测试集"""
     cfg = Config.fromfile(cfg_path)
     cfg.load_from = _patched_ckpt_path(ckpt_path)
     cfg.work_dir = str(out_dir / "tmp_runner")
@@ -138,17 +134,15 @@ def visualize(
         )
         mmengine.print_log(f"[✓] 可视化完成 → {out_file}", "current")
 
-
-
 if __name__ == "__main__":
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     mmengine.print_log(">>> Sparse-R-CNN 评测与可视化开始 …", "current")
 
-    # evaluate(CFG_PATH, CKPT_PATH, OUT_DIR)                          # 1. 评测
-    #visualize(CFG_PATH, CKPT_PATH, VOC_SAMPLES,
-              #OUT_DIR / "vis_voc", SCORE_THR)                       # 2. VOC 示例
+    evaluate(CFG_PATH, CKPT_PATH, OUT_DIR)                      
+    visualize(CFG_PATH, CKPT_PATH, VOC_SAMPLES,
+              #OUT_DIR / "vis_voc", SCORE_THR)                    
     visualize(CFG_PATH, CKPT_PATH, EXTRA_IMAGES,
-              OUT_DIR / "vis_extra", SCORE_THR)                     # 3. 外部图片
+              OUT_DIR / "vis_extra", SCORE_THR)                 
 
     mmengine.print_log(
         f"\n全部任务完成！结果目录: {OUT_DIR}\n"
