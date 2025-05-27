@@ -18,9 +18,3 @@ git clone https://github.com/open-mmlab/mmdetection.git
 cd mmdetection
 pip install -v -e.‘
 cd..
-
-# 训练sparse-rcnn
-    python ./mmdetection/tools/train.py ./sparse-rcnn_r50_fpn_1x_voc.py --work-dir ./work_dirs/sparse-rcnn_r50_fpn_1x_voc
-
-# 测试sparse-rcnn
-    python eval_vis_sparse_rcnn.py
