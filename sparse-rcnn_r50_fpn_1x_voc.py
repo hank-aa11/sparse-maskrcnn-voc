@@ -1,12 +1,9 @@
-# 继承基础配置
 _base_ = [
     r'voc0712.py',
     r'schedule_sparse_1x.py',
     r'default_runtime.py'
 ]
 
-# ----- 模型修改 -----
-# 修改类别数量以匹配 VOC (20 类)
 num_stages = 6
 num_proposals = 100
 model = dict(
@@ -82,7 +79,6 @@ model = dict(
                     target_means=[0., 0., 0., 0.],
                     target_stds=[0.5, 0.5, 1., 1.])) for _ in range(num_stages)
         ]),
-    # training and testing settings
     train_cfg=dict(
         rpn=None,
         rcnn=[
@@ -105,7 +101,6 @@ model = dict(
             nms=dict(type='nms', iou_thr=0.45),
         )))
 
-# --- 添加 TensorBoard 日志 ---
 vis_backends = [dict(type='LocalVisBackend'),
                 dict(type='TensorboardVisBackend')]
 visualizer = dict(
@@ -114,17 +109,15 @@ visualizer = dict(
     name='visualizer'
 )
 
-# --- 修改默认日志间隔 ---
 default_hooks = dict(
     timer=dict(type='IterTimerHook'),
     logger=dict(type='LoggerHook', interval=100),
     param_scheduler=dict(type='ParamSchedulerHook'),
-    checkpoint=dict(type='CheckpointHook', interval=1, save_best='auto'),  # 可以设置保存最佳模型
+    checkpoint=dict(type='CheckpointHook', interval=1, save_best='auto'), 
     sampler_seed=dict(type='DistSamplerSeedHook'),
     visualization=dict(type='DetVisualizationHook'))
 
-# ----- 5. 其他配置 -----
 work_dir = '../work_dirs/sparse_rcnn_r50_fpn_1x_voc'
-# load_from ='/mnt/data/jichuan/openmmlab_voc_project/work_dirs/sparse-rcnn_r50_fpn_1x_voc/best_pascal_voc_mAP_epoch_21.pth'
+load_from ='/mnt/data/jichuan/openmmlab_voc_project/work_dirs/sparse-rcnn_r50_fpn_1x_voc/best_pascal_voc_mAP_epoch_21.pth'（若从头训练，这句需要注释掉）
 
 
