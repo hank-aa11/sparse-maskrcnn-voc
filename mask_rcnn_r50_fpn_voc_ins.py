@@ -1,13 +1,5 @@
-# =====================================================================
-# Mask R-CNN-R50-FPN  ‖  VOC07+12  (mmdet 3.3.0)
-# GN‖多尺度训练‖AdamW+CosineLR‖OHEM‖GIoU‖TTA
-# =====================================================================
-
 _base_ = '/mnt/data/jichuan/openmmlab_voc_project/mmdetection/configs/mask_rcnn/mask-rcnn_r50_fpn_1x_coco.py'
 
-# ---------------------------------------------------------------------
-# 1. 数据集
-# ---------------------------------------------------------------------
 dataset_type = 'CocoDataset'
 data_root = '/mnt/data/jichuan/openmmlab_voc_project/data/voc_ins/'
 backend_args = None 
@@ -26,8 +18,6 @@ metainfo = dict(
     ]
 )
 
-# ---------- 数据处理流水线 ----------
-# --- 训练集流水线 ---
 train_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
     dict(type='LoadAnnotations', with_bbox=True, with_mask=True, backend_args=backend_args), 
@@ -42,7 +32,6 @@ train_pipeline = [
     dict(type='PackDetInputs')
 ]
 
-# --- 验证集流水线 ---
 val_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
     dict(type='Resize', scale=(1333, 800), keep_ratio=True),
@@ -58,7 +47,6 @@ test_pipeline = [
     dict(type='PackDetInputs', meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape', 'scale_factor'))
 ]
 
-# --- TTA 流水线 ---
 tta_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
     dict(
@@ -77,7 +65,6 @@ tta_pipeline = [
         ])
 ]
 
-# ---------- 数据加载器 ----------
 train_dataloader = dict(
     batch_size=2, 
     num_workers=8,
@@ -125,7 +112,6 @@ test_dataloader = dict(
         pipeline=tta_pipeline)
 )
 
-# ---------- 评估器 ----------
 val_evaluator = dict(
     type='CocoMetric',
     ann_file=data_root + 'annotations/instances_val07.json',
@@ -133,9 +119,6 @@ val_evaluator = dict(
     backend_args=backend_args) 
 test_evaluator = val_evaluator
 
-# ---------------------------------------------------------------------
-# 2. 模型结构优化
-# ---------------------------------------------------------------------
 model = dict(
     backbone=dict(
         norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
@@ -171,9 +154,6 @@ model = dict(
     )
 )
 
-# ---------------------------------------------------------------------
-# 3. 训练策略
-# ---------------------------------------------------------------------
 max_epochs = 150
 
 train_cfg = dict(
@@ -185,7 +165,6 @@ train_cfg = dict(
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop') 
 
-# 优化器封装
 optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(
@@ -203,7 +182,6 @@ optim_wrapper = dict(
     )
 )
 
-# 学习率调度器
 param_scheduler = [
     dict(
         type='LinearLR', 
@@ -222,7 +200,6 @@ param_scheduler = [
     )
 ]
 
-# 默认钩子
 default_hooks = dict(
     timer=dict(type='IterTimerHook'),
     logger=dict(type='LoggerHook', interval=50), 
@@ -232,16 +209,12 @@ default_hooks = dict(
     visualization=dict(type='DetVisualizationHook', draw=False, interval=100) 
 )
 
-# 运行时环境配置
 env_cfg = dict(
     cudnn_benchmark=False, 
     mp_cfg=dict(mp_start_method='fork', opencv_num_threads=0),
     dist_cfg=dict(backend='nccl'),
 )
 
-# ---------------------------------------------------------------------
-# 4. TensorBoard 可视化 (训练时)
-# ---------------------------------------------------------------------
 visualizer = dict(
     type='DetLocalVisualizer',
     vis_backends=[
@@ -251,7 +224,6 @@ visualizer = dict(
     name='visualizer'
 )
 
-# 从COCO预训练权重加载
-load_from = '/mnt/data/jichuan/openmmlab_voc_project/checkpoints/mask_rcnn_r50_fpn_1x_coco_20200205-d4b0c5d6.pth'
+load_from = '/mnt/data/jichuan/openmmlab_voc_project/checkpoints/mask_rcnn_r50_fpn_1x_coco_20200205-d4b0c5d6.pth'(若要从头训练，这句需要注释掉）
 log_level = 'INFO'
 log_processor = dict(type='LogProcessor', window_size=50, by_epoch=True)
