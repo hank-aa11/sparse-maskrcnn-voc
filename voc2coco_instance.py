@@ -1,12 +1,10 @@
-#!/usr/bin/env python
 """
 生成 COCO-style JSON（带实例分割掩码）
 
 训练集：VOC2007 train+val  + VOC2012 train+val   → instances_train0712.json
-验证集：VOC2007 val                               → instances_val07.json
+验证集：VOC2007 val                              → instances_val07.json
 
-用法：
-  python voc2coco_instance.py --voc-root data/VOCdevkit --out data/voc_ins
+python voc2coco_instance.py --voc-root data/VOCdevkit --out data/voc_ins
 """
 import argparse, os, json, tqdm, xml.etree.ElementTree as ET
 from pathlib import Path
@@ -22,11 +20,10 @@ CLASSES = [
 ]
 
 SPLIT_PLAN = {
-    # year : splits list
-    '2007': ['train', 'val'],   # 07 train+val → 训练
-    '2012': ['train', 'val'],   # 12 train+val → 训练
+    '2007': ['train', 'val'],   
+    '2012': ['train', 'val'],  
 }
-VAL_SPLIT = ('2007', 'val')     # 用 07-val 作验证集
+VAL_SPLIT = ('2007', 'val')     
 
 
 def parse_args():
@@ -39,7 +36,6 @@ def parse_args():
 
 
 def mask_from_img(mask_img: np.ndarray, instance_id: int):
-    """从 8-bit mask 图像提取某个 instance 的 RLE；若为空返回 None"""
     m = (mask_img == instance_id).astype(np.uint8)
     if m.sum() == 0:
         return None
@@ -49,18 +45,16 @@ def mask_from_img(mask_img: np.ndarray, instance_id: int):
 
 
 def iter_split_ids(voc_root: Path, year: str, split: str):
-    """读取 ImageSets/Segmentation/{split}.txt"""
     txt = voc_root / f'VOC{year}' / 'ImageSets' / 'Segmentation' / f'{split}.txt'
     return txt.read_text().strip().split()
 
 
 def process_image(voc_root: Path, year: str, iid: str,
                   img_id: int, ann_id_start: int):
-    """返回 img_info, [ann_infos], next_ann_id"""
     jpg = voc_root / f'VOC{year}' / 'JPEGImages' / f'{iid}.jpg'
     png = voc_root / f'VOC{year}' / 'SegmentationObject' / f'{iid}.png'
     mask_img = cv2.imread(str(png), cv2.IMREAD_GRAYSCALE)
-    if mask_img is None:        # 无掩码直接跳过整张图
+    if mask_img is None:       
         return None, [], ann_id_start
 
     img = cv2.imread(str(jpg))
@@ -142,7 +136,6 @@ def main():
     img_id = ann_id = 1
     val_img_id = val_ann_id = 1
 
-    # ---------- 处理训练集 ----------
     for year, splits in SPLIT_PLAN.items():
         for sp in splits:
             ids = iter_split_ids(voc_root, year, sp)
@@ -154,14 +147,12 @@ def main():
                 train_coco['images'].append(img_info)
                 train_coco['annotations'].extend(ann_list)
 
-                # 软链到 train0712/
                 src = voc_root / f'VOC{year}' / 'JPEGImages' / img_info['file_name']
                 dst = out_root / 'train0712' / img_info['file_name']
                 if not dst.exists():
                     os.symlink(src.resolve(), dst)
                 img_id += 1
 
-    # ---------- 处理验证集 ----------
     year_val, split_val = VAL_SPLIT
     for iid in tqdm.tqdm(iter_split_ids(voc_root, year_val, split_val),
                          desc=f'VOC{year_val}-{split_val} (val)'):
@@ -178,7 +169,6 @@ def main():
             os.symlink(src.resolve(), dst)
         val_img_id += 1
 
-    # ---------- 保存 JSON ----------
     ann_dir = out_root / 'annotations'
     json.dump(train_coco, open(ann_dir / 'instances_train0712.json', 'w'))
     json.dump(val_coco,   open(ann_dir / 'instances_val07.json',   'w'))
